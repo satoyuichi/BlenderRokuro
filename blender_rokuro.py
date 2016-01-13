@@ -17,27 +17,18 @@ class BlenderRokuroProps(bpy.types.PropertyGroup):
     rotate_axis_x = bpy.props.BoolProperty(name="X", default=False)
     rotate_axis_y = bpy.props.BoolProperty(name="Y", default=False)
     rotate_axis_z = bpy.props.BoolProperty(name="Z", default=True)
-    rotate_speed = bpy.props.IntProperty(name="Speed", min=1, max=32, soft_max=32, soft_min=1, step=1)
     rotate_direction = bpy.props.BoolProperty(name="Rotate Left", default=True)
+    rotate_step = bpy.props.FloatProperty(name="Step", min=1.0, max=32.0, soft_max=32.0, soft_min=1.0, step=1.0)
     
 class BlenderRokuroRotate(bpy.types.Operator):
     bl_idname = "rokuro.rotate"
     bl_label = "Start"
 
-    is_running = False
-    
     def execute(self, context):
-        BlenderRokuroRotate.is_running = not BlenderRokuroRotate.is_running
-        print(BlenderRokuroRotate.is_running)
-        return {'RUNNING_MODAL'}
-
-    def modal(self, context, event):
-        if BlenderRokuroRotate.is_running:
-            print('Modal!!')
-            return {'RUNNING_MODAL'}
-        else:
-            print('Finished!!')
-            return {'FINISHED'}
+        bpy.app.handlers.frame_change_pre.append(my_hundler)
+        bpy.ops.screen.animation_play()
+        
+        return {'FINISHED'}
 
         
 class BlenderRokuroPanel(bpy.types.Panel):
@@ -65,11 +56,15 @@ class BlenderRokuroPanel(bpy.types.Panel):
         column.prop(props, "rotate_axis_z")
 
         row = layout.row()
-        row.prop(props, "rotate_speed")
-        
-        row = layout.row()
         row.prop(props, "rotate_direction")
 
+        row = layout.row(align=True)
+        row.prop(context.scene, "frame_start", text="Start")
+        row.prop(context.scene, "frame_end", text="End")
+
+        row = layout.row()
+        row.prop(props, "rotate_step")
+        
         row = layout.row()
         row.operator("rokuro.rotate")
 
