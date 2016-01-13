@@ -19,14 +19,41 @@ class BlenderRokuroProps(bpy.types.PropertyGroup):
     rotate_axis_z = bpy.props.BoolProperty(name="Z", default=True)
     rotate_direction = bpy.props.BoolProperty(name="Rotate Left", default=True)
     rotate_step = bpy.props.FloatProperty(name="Step", min=1.0, max=32.0, soft_max=32.0, soft_min=1.0, step=1.0)
+    rotate_started = bpy.props.BoolProperty(name="Started", default=False)
+
+def rokuro_proc(scene):
+    props = bpy.context.window_manager.rokuro
+
+    r = props.rotate_step * 360.0 / (scene.frame_end - scene.frame_start)
+    if props.rotate_direction:
+        r *= -1.0
+    
+    if props.rotate_axis_x:
+        bpy.context.object.rotation_euler[0] += math.radians(r)
+
+    if props.rotate_axis_y:
+        bpy.context.object.rotation_euler[1] += math.radians(r)
+
+    if props.rotate_axis_z:
+        bpy.context.object.rotation_euler[2] += math.radians(r)
+
+    
     
 class BlenderRokuroRotate(bpy.types.Operator):
     bl_idname = "rokuro.rotate"
     bl_label = "Start"
 
+    is_started = False
+    
     def execute(self, context):
-        bpy.app.handlers.frame_change_pre.append(my_hundler)
-        bpy.ops.screen.animation_play()
+        if BlenderRokuroRotate.is_started:
+            bpy.app.handlers.frame_change_pre.remove(rokuro_proc)
+            bpy.ops.screen.animation_cancel()
+        else:
+            bpy.app.handlers.frame_change_pre.append(rokuro_proc)
+            bpy.ops.screen.animation_play()
+
+        BlenderRokuroRotate.is_started = not BlenderRokuroRotate.is_started
         
         return {'FINISHED'}
 
@@ -66,8 +93,12 @@ class BlenderRokuroPanel(bpy.types.Panel):
         row.prop(props, "rotate_step")
         
         row = layout.row()
-        row.operator("rokuro.rotate")
+        if BlenderRokuroRotate.is_started:
+            row.operator("rokuro.rotate", text="Enable Rokuro")
+        else:
+            row.operator("rokuro.rotate", text="Disable Rokuro")
 
+            
 def register():
     bpy.utils.register_class(BlenderRokuroProps)
     bpy.utils.register_class(BlenderRokuroPanel)
