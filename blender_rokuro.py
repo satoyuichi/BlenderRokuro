@@ -12,6 +12,7 @@ bl_info = {
 
 import bpy
 import math
+import copy
 
 class BlenderRokuroProps(bpy.types.PropertyGroup):
     rotate_axis_x = bpy.props.BoolProperty(name="X", default=False)
@@ -19,23 +20,41 @@ class BlenderRokuroProps(bpy.types.PropertyGroup):
     rotate_axis_z = bpy.props.BoolProperty(name="Z", default=True)
     rotate_direction = bpy.props.BoolProperty(name="Rotate Left", default=True)
     rotate_step = bpy.props.FloatProperty(name="Step", min=1.0, max=32.0, soft_max=32.0, soft_min=1.0, step=1.0)
-    rotate_started = bpy.props.BoolProperty(name="Started", default=False)
+    rotate_previous_euler = copy.deepcopy(bpy.context.object.rotation_euler)
+    rotate_started = False
+
+def rokuro_add_euler(euler, r):
+    props = bpy.context.window_manager.rokuro
+
+    if props.rotate_direction:
+        if (euler + r) < 0:
+            new_euler = euler + r + (2.0 * math.pi)
+        else:
+            new_euler = euler + r
+    else:
+        if (euler + r) > (2.0 * math.pi):
+            new_euler = euler + r - (2.0 * math.pi)
+        else:
+            new_euler = euler + r
+        
+    return new_euler
+
 
 def rokuro_proc(scene):
     props = bpy.context.window_manager.rokuro
 
-    r = props.rotate_step * 360.0 / (scene.frame_end - scene.frame_start)
+    r = props.rotate_step * 2.0 * math.pi / (scene.frame_end - scene.frame_start)
     if props.rotate_direction:
         r *= -1.0
     
     if props.rotate_axis_x:
-        bpy.context.object.rotation_euler[0] += math.radians(r)
+        bpy.context.object.rotation_euler[0] = rokuro_add_euler(bpy.context.object.rotation_euler[0], r)
 
     if props.rotate_axis_y:
-        bpy.context.object.rotation_euler[1] += math.radians(r)
+        bpy.context.object.rotation_euler[1] = rokuro_add_euler(bpy.context.object.rotation_euler[1], r)
 
     if props.rotate_axis_z:
-        bpy.context.object.rotation_euler[2] += math.radians(r)
+        bpy.context.object.rotation_euler[2] = rokuro_add_euler(bpy.context.object.rotation_euler[2], r)
 
     
     
@@ -43,17 +62,17 @@ class BlenderRokuroRotate(bpy.types.Operator):
     bl_idname = "rokuro.rotate"
     bl_label = "Start"
 
-    is_started = False
-    
     def execute(self, context):
-        if BlenderRokuroRotate.is_started:
-            bpy.app.handlers.frame_change_pre.remove(rokuro_proc)
+        if BlenderRokuroProps.rotate_started:
             bpy.ops.screen.animation_cancel()
+            bpy.app.handlers.frame_change_post.remove(rokuro_proc)
+            bpy.context.object.rotation_euler = BlenderRokuroProps.rotate_previous_euler
         else:
-            bpy.app.handlers.frame_change_pre.append(rokuro_proc)
+            BlenderRokuroProps.rotate_previous_euler = copy.deepcopy(bpy.context.object.rotation_euler)
+            bpy.app.handlers.frame_change_post.append(rokuro_proc)
             bpy.ops.screen.animation_play()
 
-        BlenderRokuroRotate.is_started = not BlenderRokuroRotate.is_started
+        BlenderRokuroProps.rotate_started = not BlenderRokuroProps.rotate_started
         
         return {'FINISHED'}
 
@@ -93,10 +112,10 @@ class BlenderRokuroPanel(bpy.types.Panel):
         row.prop(props, "rotate_step")
         
         row = layout.row()
-        if BlenderRokuroRotate.is_started:
-            row.operator("rokuro.rotate", text="Enable Rokuro")
-        else:
+        if BlenderRokuroProps.rotate_started:
             row.operator("rokuro.rotate", text="Disable Rokuro")
+        else:
+            row.operator("rokuro.rotate", text="Enable Rokuro")
 
             
 def register():
@@ -117,14 +136,5 @@ def unregister():
     except:
         pass
 
-def my_hundler(scene):
-    cf = scene.frame_current
-    r = (cf * 10)
-    bpy.context.object.rotation_euler[2] = math.radians(r)
-  
-    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
-    
 if __name__ == "__main__":
     register()
-
-#    bpy.app.handlers.frame_change_pre.append(my_hundler)
