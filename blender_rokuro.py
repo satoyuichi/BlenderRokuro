@@ -3,12 +3,12 @@ bl_info = {
     "author": "Yuichi Sato",
     "version": (0, 1),
     "blender": (2, 76, 0),
-    "location": "Found in the properties shelf.",
-    "description": "Modeling on the rokuro.",
-    "warning": "",
+    "location": "View 3D > Sculpt mode > Tool",
+    "description": "Add Rokuro method for sculpt.",
+    "warning": "Under construction! Visit Wiki for details.",
     "wiki_url": "https://github.com/satoyuichi/BlenderRokuro",
     "tracker_url": "",
-    "category": "3D View"}
+    "category": "Sculpting"}
 
 import bpy
 import math
