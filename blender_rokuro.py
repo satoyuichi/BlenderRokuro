@@ -20,7 +20,6 @@ class BlenderRokuroProps(bpy.types.PropertyGroup):
     rotate_axis_z = bpy.props.BoolProperty(name="Z", default=True)
     rotate_direction = bpy.props.BoolProperty(name="Rotate Left", default=True)
     rotate_step = bpy.props.FloatProperty(name="Step", min=1.0, max=32.0, soft_max=32.0, soft_min=1.0, step=1.0)
-    rotate_previous_euler = copy.deepcopy(bpy.context.object.rotation_euler)
     rotate_started = False
 
 def rokuro_add_euler(euler, r):
@@ -86,7 +85,7 @@ class BlenderRokuroPanel(bpy.types.Panel):
 
     @classmethod
     def poll(self, context):
-        return context.mode == 'SCULPT'
+        return (context.mode == 'SCULPT') or (context.mode == 'PAINT_TEXTURE')
         
     def draw(self, context):
         props = context.window_manager.rokuro
