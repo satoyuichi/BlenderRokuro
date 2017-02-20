@@ -1,8 +1,8 @@
 bl_info = {
     "name": "Blender Rokuro",
     "author": "Yuichi Sato",
-    "version": (0, 1),
-    "blender": (2, 76, 0),
+    "version": (0, 12),
+    "blender": (2, 78, 0),
     "location": "View 3D > Sculpt mode > Tool",
     "description": "Add Rokuro method for sculpt.",
     "warning": "Under construction! Visit Wiki for details.",
@@ -55,7 +55,10 @@ def rokuro_proc(scene):
     if props.rotate_axis_z:
         bpy.context.object.rotation_euler[2] = rokuro_add_euler(bpy.context.object.rotation_euler[2], r)
 
-    
+
+def rokuro_at_load(scene):
+    BlenderRokuroProps.rotate_started = False
+
     
 class BlenderRokuroRotate(bpy.types.Operator):
     bl_idname = "rokuro.rotate"
@@ -65,10 +68,12 @@ class BlenderRokuroRotate(bpy.types.Operator):
         if BlenderRokuroProps.rotate_started:
             bpy.ops.screen.animation_cancel()
             bpy.app.handlers.frame_change_post.remove(rokuro_proc)
+            bpy.app.handlers.load_pre.remove(rokuro_at_load)
             bpy.context.object.rotation_euler = BlenderRokuroProps.rotate_previous_euler
         else:
             BlenderRokuroProps.rotate_previous_euler = copy.deepcopy(bpy.context.object.rotation_euler)
             bpy.app.handlers.frame_change_post.append(rokuro_proc)
+            bpy.app.handlers.load_pre.append(rokuro_at_load)
             bpy.ops.screen.animation_play()
 
         BlenderRokuroProps.rotate_started = not BlenderRokuroProps.rotate_started
@@ -112,9 +117,9 @@ class BlenderRokuroPanel(bpy.types.Panel):
         
         row = layout.row()
         if BlenderRokuroProps.rotate_started:
-            row.operator("rokuro.rotate", text="Disable Rokuro")
+            row.operator("rokuro.rotate", text="Disable Rokuro", icon='PAUSE')
         else:
-            row.operator("rokuro.rotate", text="Enable Rokuro")
+            row.operator("rokuro.rotate", text="Enable Rokuro", icon='PLAY')
 
             
 def register():
