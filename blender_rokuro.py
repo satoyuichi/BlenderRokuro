@@ -1,7 +1,7 @@
 bl_info = {
     "name": "Blender Rokuro",
     "author": "Yuichi Sato",
-    "version": (0, 12),
+    "version": (0, 2),
     "blender": (2, 78, 0),
     "location": "View 3D > Sculpt mode > Tool",
     "description": "Add Rokuro method for sculpt.",
@@ -14,12 +14,34 @@ import bpy
 import math
 import copy
 
+blender_rokuro_dict = {
+    "en_US" : {
+        ("*", "Rotate Left") : "Rotate Left",
+        ("*", "Step") : "Step",
+        ("*", "Start") : "Start",
+        ("*", "End") : "End",
+        ("*", "Enable Rokuro") : "Enable Rokuro",
+        ("*", "Disable Rokuro") : "Disable Rokuro",
+    },
+    "ja_JP" : {
+        ("*", "Rotate Left") : "左周り",
+        ("*", "Step") : "ステップ",
+        ("*", "Start") : "開始",
+        ("*", "End") : "終了",
+        ("*", "Enable Rokuro") : "ろくろ有効",
+        ("*", "Disable Rokuro") : "ろくろ無効",
+    },
+}
+
+def translate(key):
+    return bpy.app.translations.pgettext(key)
+
 class BlenderRokuroProps(bpy.types.PropertyGroup):
     rotate_axis_x = bpy.props.BoolProperty(name="X", default=False)
     rotate_axis_y = bpy.props.BoolProperty(name="Y", default=False)
     rotate_axis_z = bpy.props.BoolProperty(name="Z", default=True)
-    rotate_direction = bpy.props.BoolProperty(name="Rotate Left", default=True)
-    rotate_step = bpy.props.FloatProperty(name="Step", min=1.0, max=32.0, soft_max=32.0, soft_min=1.0, step=1.0)
+    rotate_direction = bpy.props.BoolProperty(name=translate("Rotate Left"), default=True)
+    rotate_step = bpy.props.FloatProperty(name=translate("Step"), min=1.0, max=32.0, soft_max=32.0, soft_min=1.0, step=1.0)
     rotate_started = False
 
 def rokuro_add_euler(euler, r):
@@ -117,15 +139,16 @@ class BlenderRokuroPanel(bpy.types.Panel):
         
         row = layout.row()
         if BlenderRokuroProps.rotate_started:
-            row.operator("rokuro.rotate", text="Disable Rokuro", icon='PAUSE')
+            row.operator("rokuro.rotate", text=translate("Disable Rokuro"), icon='PAUSE')
         else:
-            row.operator("rokuro.rotate", text="Enable Rokuro", icon='PLAY')
+            row.operator("rokuro.rotate", text=translate("Enable Rokuro"), icon='PLAY')
 
             
 def register():
     bpy.utils.register_class(BlenderRokuroProps)
     bpy.utils.register_class(BlenderRokuroPanel)
     bpy.utils.register_class(BlenderRokuroRotate)
+    bpy.app.translations.register(__name__, blender_rokuro_dict)
 
     bpy.types.WindowManager.rokuro = bpy.props.PointerProperty(type=BlenderRokuroProps)
 
@@ -134,6 +157,7 @@ def unregister():
     bpy.utils.unregister_class(BlenderRokuroProps)
     bpy.utils.unregister_class(BlenderRokuroPanel)
     bpy.utils.unregister_class(BlenderRokuroRotate)
+    bpy.app.translations.unregister(__name__, blender_rokuro_dict)
 
     try:
         del bpy.types.WindowManager.rokuro
